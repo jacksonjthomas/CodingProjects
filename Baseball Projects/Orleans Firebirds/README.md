@@ -6,12 +6,15 @@
 
 ## Goal
 ### The goal of this project was to use Trackman data and original metrics to analytically evaluate Cape Cod League Baseball Players
-  * ### Pitcher visuals
-    * #### 
-    * #### 
-  * ### Hitter visuals
-    * #### 
-    * #### 
-  * ### Original Metrics
-    
-
+  * ### Scouting Reports
+  * ### Pitcher Visuals
+    * #### Movement Plots
+    * #### Release Plots
+    * #### Spin Histograms
+    * #### KZone Heatmap
+    * #### Punch Score
+  * ### Hitter Visuals
+    * #### Hard Hit Zone Heatmap
+    * #### Exit Velocity Histogram
+    * #### Ball In Play Hard Hit Split
+    * #### Plate Approach Efficiency 
