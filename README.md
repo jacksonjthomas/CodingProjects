@@ -1,6 +1,6 @@
 # CodingProjects
 
-### This repository is a collection of various sports analytics, general analytics, and coding projects. 
+### This repository is a collection of sports analytics, general analytics, and coding projects. 
 
 ## Languages Used  
 * Python
