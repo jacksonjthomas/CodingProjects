@@ -1,7 +1,7 @@
 # Project Title
 ### *Date*
 
-## **Author**
+### **Author**
 
 ## Goal
 
