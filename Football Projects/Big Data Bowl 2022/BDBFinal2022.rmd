@@ -1,0 +1,639 @@
+---
+title: "TUG: The Battle for Field Position"
+author: "Brian Bak and Jackson Thomas"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+***
+
+```{r, include=FALSE}
+library(here)
+library(tidyverse)
+library(dplyr)
+library(plotly)
+library(flexdashboard)
+library(DT)
+library(data.table)
+library(reshape)
+library(reshape2)
+library(hexbin)
+library(knitr)
+library(shinythemes)
+library(nflplotR)
+library(ggplot2)
+library(nflreadr)
+library(nflfastR)
+library(plotly)
+library(ggrepel)
+```
+
+##### Link to Code
+
+# Introduction 
+
+<font size = "4"> In today's game, there is a lack of existing metrics that evaluate the performance of special teams players. The majority of statistics that exist are ones that measure the outcome of the play result, and rarely the quality of a play. Specifically within punting, there are an abundance of variables outside of the punter's control that influence the outcome of a punt, which leads to an inconsistent telling of how well a punt was executed, and the overall ability of a punter. Football is complicated battle full of decisions regarding field position. If we think of the field position battle as a game of tug and war, we recognize that the punt team wishes to minimize their opponent's field position after the end of each punt, while the return team wishes to maximize their own field position after the end of each punt. As a result, we created a metric concept called TUG for punters and returners.
+
+<p>&nbsp;</p>
+
+![](/Users/jacksonthomas/Desktop/Big Data Bowl 2022/BigDataBowl/TUGImage.png)
+
+***
+
+# What is TUG?
+
+<font size = "4"> Our TUG metric evaluates and scores the quality of a punt/return based on how well the punter/returner achieves field position given their starting territory. TUGp is specifically for punters and TUGr is specifically for returners.
+
+* **TUGp** 
+  + <font size = "4"> *TUGp = puntingTeamTerritory + kickLength*
+  + <font size = "4"> puntingTeamTerritory: The total number of yards behind the line of scrimmage.
+  + <font size = "4"> kickLength: The total number of yards the punt traveled in the air.
+  
+* **TUGr**
+  + <font size = "4"> *TUGr = returningTeamTerritory + kickReturnYardage*
+  + <font size = "4"> returningTeamTerritory = (100 - TUGp)
+  + <font size = "4"> kickReturnYardage: The number of return yards the returner gains.
+  
+### Why is TUG Practical?
+
+<font size = "4"> The metrics are all on a scale of 0-100. The score is absolute as it takes into account different situations. For example, a 60 yard punt on the 30 yard line is different than a 60 yard punt on the opponent's 45 yard line. Regardless, the goal of each punt play remains the same in any scenario: minimize field position for the returner if you are punting, and maximize field position if you are returning.
+
+### The Purpose of TUG
+
+<font size = "4"> The purpose of this statistic is to evaluate a punter's true ability to consistently pin their opponent given different field position scenarios. On the contrary, we use this to evaluate how well a returner can optimize a return for their team. This takes into account specifically the events that a punter has control over as it eliminates all outside variables that occur within a punt return. A great punt can no longer be negated due to a missed tackle. 
+
+***
+
+```{r, include=FALSE}
+playsData <- read.csv(here("Datasets", "plays.csv"))
+playsVariables <- c("gameId", "playId", "possessionTeam", "specialTeamsPlayType", "kickerId", "returnerId", "yardlineSide",
+                    "yardlineNumber", "penaltyYards", "kickLength", "kickReturnYardage", "playResult", "specialTeamsResult")
+playsData <- playsData[playsVariables]
+
+playsData[is.na(playsData)] = 0
+
+playsData <- playsData %>%
+  subset(returnerId != 0)
+
+playsData <-
+  playsData %>%
+  mutate(gameId = as.factor(gameId),
+         playId = as.factor(playId),
+         kickerId = as.factor(kickerId),
+         returnerId = as.factor(returnerId))
+```
+
+
+```{r, include=FALSE}
+playersData <- read.csv(here("Datasets", "players.csv"))
+
+playersData <- playersData %>%
+  subset(select = -c(birthDate, collegeName, height, weight)) 
+
+playersData <-
+  playersData %>%
+  mutate(nflId = as.factor(nflId))
+```
+
+
+```{r, include=FALSE}
+pffScoutingData <- read.csv(here("Datasets", "PFFScoutingData.csv"), stringsAsFactors = FALSE) 
+
+pffScoutingDataVariables <- c("gameId", "playId", "snapTime", "operationTime", "hangTime", "kickType", "kickDirectionIntended", "kickDirectionActual",
+                              "returnDirectionActual", "returnDirectionIntended", "snapDetail")
+
+pffScoutingData <- pffScoutingData[pffScoutingDataVariables]
+
+pffScoutingData <- na.omit(pffScoutingData)
+
+pffScoutingData[pffScoutingData == 'C'] <- "Center"
+pffScoutingData[pffScoutingData == 'L'] <- "Left"
+
+pffScoutingData$kickDirectionIntended[pffScoutingData$kickDirectionIntended == 'R'] <- "Right"
+pffScoutingData$kickDirectionActual[pffScoutingData$kickDirectionActual == 'R'] <- "Right"
+
+pffScoutingData$returnDirectionActual[pffScoutingData$returnDirectionActual == 'R'] <- "Right"
+pffScoutingData$returnDirectionIntended[pffScoutingData$returnDirectionIntended == 'R'] <- "Right"
+
+pffScoutingData[pffScoutingData == 'N'] <- "Normal"
+pffScoutingData[pffScoutingData == 'A'] <- "Aussie"
+pffScoutingData$kickType[pffScoutingData$kickType == 'R'] <- "Rugby"
+
+pffScoutingData <- pffScoutingData %>% drop_na() %>%
+  subset(select = -c(gameId))
+
+pffScoutingData <- 
+  pffScoutingData %>%
+  mutate(playId = as.factor(playId)) 
+  
+```
+
+```{r, include=FALSE}
+gamesData <- read.csv(here("Datasets", "games.csv"))
+
+gamesData <- gamesData %>%
+  subset(select = -c(gameTimeEastern, homeTeamAbbr, visitorTeamAbbr)) %>%
+  mutate(gameId = as.factor(gameId))
+```
+
+
+```{r, include=FALSE}
+playsData <-
+  playsData %>%
+  mutate(puntingTeamTerritory = ifelse((possessionTeam != yardlineSide), 100 - yardlineNumber, yardlineNumber),
+         TUGp = puntingTeamTerritory + kickLength,
+         returningTeamTerritory = 100 - TUGp,
+         TUGr = returningTeamTerritory + kickReturnYardage)
+
+punts <- subset(playsData, specialTeamsPlayType == "Punt")
+
+punts <- punts %>%
+  mutate(puntingFromOwnTerritory = ifelse((possessionTeam == yardlineSide), 1, 0))
+
+puntsPFFData <- inner_join(x = punts,
+                           y = pffScoutingData,
+                           by = "playId")
+```
+
+
+```{r, include=FALSE}
+TUGPunterData <- 
+  puntsPFFData %>%
+  subset(select = c(kickerId, TUGp, possessionTeam, hangTime, gameId)) %>%
+  mutate(nflId = kickerId)
+
+TUGPunterScoresData <- inner_join(x = TUGPunterData,
+                              y = playersData,
+                              by = "nflId")
+```
+
+
+```{r, include=FALSE}
+TUGPunterScoresGameData <- inner_join(x = TUGPunterScoresData,
+                              y = gamesData,
+                              by = "gameId")
+
+TUGPunterScoresGameData <- TUGPunterScoresGameData %>%
+  subset(select = -c(week, gameDate, Position))
+
+TUGPunterYearsSummary <- 
+  TUGPunterScoresGameData %>%
+  group_by(displayName, season) %>%
+  summarize(Attempts = n(),
+            TUGp = round(mean(TUGp),2)
+            ) %>%
+  arrange(desc(TUGp))
+
+TUGPunterYearsSummary <- TUGPunterYearsSummary %>%
+  as.data.frame(TUGPunterYearsSummary) %>%
+  arrange(desc(TUGp)) %>%
+  mutate(season = as.factor(season))
+
+```
+
+
+```{r, include=FALSE}
+TUGPunterSummary <-
+  TUGPunterScoresData %>%
+  group_by(displayName) %>%
+  summarize(Attempts = n(),
+            TUGp = round(mean(TUGp),2)
+            ) %>%
+  arrange(desc(TUGp))
+
+TUGPunterSummary <- TUGPunterSummary %>% 
+  as.data.frame(TUGPunterSummary) %>%
+  subset(Attempts >= 40) %>%
+  arrange(desc(TUGp)) 
+
+
+TUGpAverage <- mean(punts$TUGp)
+
+TUGPunterSummary <-
+  TUGPunterSummary %>%
+  mutate("TUGp_Plus" = round(((TUGp/TUGpAverage) * 100), 0))
+
+```
+
+
+```{r, include=FALSE}
+TUGReturnerData <- 
+  punts %>%
+  subset(select = c(returnerId, TUGr, possessionTeam, gameId)) %>%
+  mutate(nflId = returnerId)
+
+TUGReturnerScoresData <- inner_join(x = TUGReturnerData,
+                              y = playersData,
+                              by = "nflId")
+```
+
+```{r, include=FALSE}
+TUGReturnerScoresGameData <- inner_join(x = TUGReturnerScoresData,
+                              y = gamesData,
+                              by = "gameId")
+
+TUGReturnerScoresGameData <- TUGReturnerScoresGameData %>%
+  subset(select = -c(week, gameDate, Position))
+
+TUGReturnerYearsSummary <- 
+  TUGReturnerScoresGameData %>%
+  group_by(displayName, season) %>%
+  summarize(Attempts = n(),
+            TUGr = round(mean(TUGr),2)
+            ) %>%
+  arrange(desc(TUGr))
+
+TUGReturnerYearsSummary <- TUGReturnerYearsSummary %>%
+  as.data.frame(TUGReturnerYearsSummary) %>%
+  subset(Attempts >= 0) %>%
+  arrange(desc(TUGr)) %>%
+  mutate(season = as.factor(season))
+```
+
+```{r, include=FALSE}
+TUGReturnerSummary <-
+  TUGReturnerScoresData %>%
+  group_by(displayName) %>%
+  summarize(Attempts = n(),
+            TUGr = round(mean(TUGr),2)
+            ) %>%
+  arrange(desc(TUGr))
+
+TUGReturnerSummary <- TUGReturnerSummary %>% 
+  as.data.frame(TUGReturnerSummary) %>%
+  subset(Attempts >= 16) %>%
+  arrange(desc(TUGr))
+
+TUGrAverage <- mean(punts$TUGr)
+
+TUGReturnerSummary <-
+  TUGReturnerSummary %>%
+  mutate("TUGr_Plus" = round(((TUGr/TUGrAverage) * 100), 0))
+```
+
+```{r, include=FALSE}
+TUGpLRModel <- lm(TUGp ~ puntingTeamTerritory + snapDetail + snapTime + operationTime +
+                  hangTime + kickType + kickDirectionActual,
+               data = puntsPFFData)
+```
+
+```{r, include=FALSE}
+TUGrLRModel <- lm(TUGr ~ puntingTeamTerritory + specialTeamsResult + 
+                  hangTime + kickType + returnDirectionActual,
+               data = puntsPFFData)
+```
+
+```{r, include=FALSE}
+TUGpPlotData_KickType <- 
+  puntsPFFData %>%
+  group_by(kickType) %>%
+  summarise(AvgTUGp = mean(TUGp),
+            Frequency = n()) %>%
+  as.data.frame(TUGpPlotData_KickType)
+
+TUGpPlotData_KickDirection <- 
+  puntsPFFData %>%
+  group_by(kickDirectionActual) %>%
+  summarise(AvgTUGp = mean(TUGp),
+            Frequency = n()) %>%
+  as.data.frame(TUGpPlotData_KickDirection)
+```
+
+```{r, include=FALSE}
+TUGrPlotData_ReturnResult <- 
+  puntsPFFData %>%
+  group_by(specialTeamsResult) %>%
+  summarise(AvgTUGr = mean(TUGr),
+            Frequency = n()) %>%
+  as.data.frame(TUGrPlotData_ReturnResult)
+
+TUGrPlotData_KickType <- 
+  puntsPFFData %>%
+  group_by(kickType) %>%
+  summarise(AvgTUGr = mean(TUGr),
+            Frequency = n()) %>%
+  as.data.frame(TUGrPlotData_KickType)
+
+TUGrPlotData_KickDirection <- 
+  puntsPFFData %>%
+  group_by(returnDirectionActual) %>%
+  summarise(AvgTUGr = mean(TUGr),
+            Frequency = n()) %>%
+  as.data.frame(TUGrPlotData_KickDirection)
+```
+
+# What Influences TUG?
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+TUGpHangTimePlot <- ggplot(puntsPFFData, aes(x = hangTime, y = TUGp)) + 
+  geom_hex() + #size = 2, alpha = 0.7
+  geom_smooth(size = 2, color = "darkgoldenrod1") +
+  theme_minimal() + 
+  ggtitle("Hang Time vs. TUGp") + 
+  labs(x = "Hang Time (seconds)", y = "TUGp", fill = "Count") + 
+         theme(plot.title = element_text(hjust = 0.5, size = 20),
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 18),
+            axis.title.y = element_text(size = 18), 
+            strip.text = element_text(size = 16), 
+            legend.title = element_text(size = 16), 
+            legend.text = element_text(size = 14))
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+TUGpHangTimePlot
+```
+
+
+<font size = "4"> The plot above displays the relationship between hang time and TUGp. We can infer that there is a trend that as hang time increases, TUGp increases. 
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+TUGpHangKickTypePlot <- ggplot(TUGpPlotData_KickType, aes(x = kickType, y = AvgTUGp)) +
+  geom_col(aes(fill = kickType)) + 
+  geom_text(label = "79.39", y = 40, x = 1, size = 10) +
+  geom_text(label = "77.29", y = 38, x = 2, size = 10) +
+  geom_text(label = "72.50", y = 36, x = 3, size = 10) +
+  theme_minimal() + 
+  ggtitle("Average TUGp Per Kick Type") + 
+  labs(x = " ", y = "TUGp") + 
+         theme(plot.title = element_text(hjust = 0.5, size = 20),
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 18),
+            axis.title.y = element_text(size = 18), 
+            strip.text = element_text(size = 16),
+            legend.title = element_text(size = 16), 
+            legend.text = element_text(size = 14)) + 
+  scale_fill_discrete(name = "Attempts", labels = c("474", "3617", "4"))
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+TUGpHangKickTypePlot
+```
+
+
+<font size = "4"> The chart displays how different types of punts impact TUGp. One strategy we can recommend to gain a higher TUG is to perform an Aussie style punt. We cannot conclude that Rugby style punts lead to the lowest average TUGp score due to the variability in sample size and because it is a newly implemented kick style.
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+TUGrHangTimePlot <- ggplot(puntsPFFData, aes(x = hangTime, y = TUGr)) + 
+  geom_hex() + 
+  geom_smooth(size = 2, color = "darkgoldenrod1") +
+  theme_minimal() + 
+  ggtitle("Hang Time vs TUGr") + 
+  labs(x = "Hang Time (seconds)", y = "TUGr", fill = "Count") + 
+         theme(plot.title = element_text(hjust = 0.5, size = 20),
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 18),
+            axis.title.y = element_text(size = 18), 
+            strip.text = element_text(size = 16), 
+            legend.title = element_text(size = 16), 
+            legend.text = element_text(size = 14))
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+TUGrHangTimePlot
+```
+
+
+<font size = "4"> The plot above displays the relationship between hang time and TUGr. We can infer that there is a trend that as hang time increases, TUGr decreases. This makes sense because as the ball is in the air for a longer period of time, the punting team has a greater opportunity to track down the returner and minimize the return.
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+TUGrReturnResultPlot <- 
+  ggplot(TUGrPlotData_ReturnResult, aes(x = specialTeamsResult, y = AvgTUGr)) +
+  geom_col(aes(fill = specialTeamsResult)) + 
+  geom_text(label = "19.93", y = 10, x = 1, size = 10) +
+  geom_text(label = "26.28", y = 13, x = 2, size = 10) +
+  geom_text(label = "32.93", y = 16, x = 3, size = 10) +
+  theme_minimal() + 
+  ggtitle("Average TUGr per Return Type") + 
+  labs(x = " ", y = "TUGr") + 
+         theme(plot.title = element_text(hjust = 0.5, size = 20),
+            axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16),
+            axis.title.x = element_text(size = 18),
+            axis.title.y = element_text(size = 18), 
+            strip.text = element_text(size = 16),
+            legend.title = element_text(size = 16), 
+            legend.text = element_text(size = 14)) + 
+  scale_fill_discrete(name = "Attempts", labels = c("839", "110", "3146"))
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+TUGrReturnResultPlot
+```
+
+<font size = "4"> The chart displays how different types of return outcomes impact TUGr. From a punter's perspective, we can conclude that the optimal decision is to execute a punt that leads to a fair catch. 
+
+<p>&nbsp;</p>
+
+***
+
+# Player Analysis
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+TopTenTUGpPunters <- c("Jake Bailey", "Sam Koch", "Bryan Anger", "A.J. Cole", "Michael Dickson", "Brett Kern", 
+                       "Trevor Daniel", "Michael Palardy", "Logan Cooke", "Matt Haack")
+TopTenTUGPunterYearSummary <- TUGPunterYearsSummary %>% 
+  subset(displayName %in% TopTenTUGpPunters)
+```
+
+```{r, include=FALSE}
+RollingAveragePunters <-
+  ggplot(TopTenTUGPunterYearSummary, aes(x = season, y = TUGp, group=1)) +
+          geom_line(size = 1, color = "cornflowerblue", alpha = 0.6) +
+  geom_point(size = 1) +
+  geom_text_repel(aes(label = TUGp),
+                  size = 3.25, force_pull = 3, nudge_x = -0.1, nudge_y = -0.3, point.padding = 1, fontface = "bold") +
+  labs(x = "Season") +
+  theme_linedraw() +
+  ggtitle("TUGp Rolling Averages") +
+  theme(strip.text.y = element_text(angle = 0, face="bold", size = 11),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill = "grey"),
+        strip.text = element_text(color = "black")) +
+  facet_grid(rows = vars(displayName))
+```
+
+
+```{r, echo=FALSE}
+RollingAveragePunters
+```
+
+
+<font size = "4"> We implemented a rolling average graph to display each punter's performance over the last three seasons. We can infer whether a player can progress, regress, or maintain a consistent TUGp throughout the course of the last three seasons. Observing this chart, A.J. Cole has improved from his 2019 to 2020 season, which is also telling because he recently signed a contract extension for the Las Vegas Raiders. Trevor Daniel has been slowly regressing over the last three seasons, putting his team at worse field positions.
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+Roster <- fast_scraper_roster(2018:2021)
+```
+
+```{r, echo=FALSE}
+names(TUGPunterSummary) <- c("Player", "Punts", "TUGp", "TUG+")
+DT::datatable(TUGPunterSummary, 
+              class = "hover")
+```
+
+
+<font size = "4"> Our next objective was to see which punters performed well and consistently scored high TUGp scores. Based on the our criteria of a minimum of 40 punts, we can observe that from the seasons of 2018-2020, Jake Bailey has the highest average TUGp score. This suggests that Bailey frequently gave his team a more optimal field position for his team than any other punter. In order to standardize and compare punters based on TUGp performance, we created TUG+ for ease of interpretation. For example, Jake Bailey's TUG+ score of 106 shows that he is 6% better at TUGp than the average punter, given that a TUG+ score of 100 is average. On the contrary, Lachlan Edwards' TUG+ score of 94 indicates that he is 6% worse at TUGp than the average punter.
+
+<p>&nbsp;</p>
+
+```{r, echo=FALSE}
+names(TUGReturnerSummary) <- c("Player", "Returns", "TUGr", "TUG+")
+DT::datatable(TUGReturnerSummary, 
+              class = "hover")
+```
+
+
+<font size = "4"> We additionally applied this to see which returners performed well and consistently scored high TUGr scores. Based on the our criteria of a minimum of 16 returns, we can observe that from the seasons of 2018-2020, Deonte Harris has the highest average TUGr score. This suggests that Harris frequently gave his team a more optimal field position for his team than any other returner. Additionally, we applied TUG+ to returners as well. For example, Deonte Harris' TUG+ score of 132 shows that he is 32% better at TUGr than the average returner, given that a TUG+ score of 100 is average. On the contrary, Darrius Shepard's TUG+ score of 72 indicates that he is 28% worse at TUGr than the average returner.
+
+<p>&nbsp;</p>
+
+```{r, include=FALSE}
+PlotPunt <- read.csv(here("Datasets", "Punters.csv"), stringsAsFactors = FALSE)
+```
+
+
+```{r, include=FALSE}
+TopTenTUGp <- ggplot2::ggplot(PlotPunt, aes(y = factor(reorder(id, TUGp)), x = TUGp)) +
+  ggplot2::geom_col(aes(color = team, fill = team), width = 0.6) +
+  nflplotR::scale_color_nfl(type = "secondary") +
+  nflplotR::scale_fill_nfl(alpha = 0.9) +
+  nflplotR::scale_y_nfl_headshots() +
+  ggplot2::labs(title = "Top 10 Punter TUGp Scores", y = "Average TUGp Scores") +
+  ggplot2::theme_minimal() +
+  annotate("text", x = 60.6, y = 10, label = "Jake Bailey", color = "white") +
+  annotate("text", x = 83.97, y = 10, label = "82.97", color = "black") +
+  annotate("text", x = 60.5, y = 9, label = "Sam Koch", color = "white") +
+  annotate("text", x = 82.72, y = 9, label = "81.72", color = "black") +
+  annotate("text", x = 60.75, y = 8, label = "Bryan Anger", color = "white") +
+  annotate("text", x = 82.35, y = 8, label = "81.35", color = "black") +
+  annotate("text", x = 60.35, y = 7, label = "A.J. Cole", color = "white") +
+  annotate("text", x = 81.6, y = 7, label = "80.8", color = "black") +
+  annotate("text", x = 61.5, y = 6, label = "Michael Dickson", color = "white") +
+  annotate("text", x = 81.65, y = 6, label = "80.65", color = "black") +
+  annotate("text", x = 60.5, y = 5, label = "Brett Kern", color = "white") +
+  annotate("text", x = 80.51, y = 5, label = "79.51", color = "black") +
+  annotate("text", x = 61, y = 4, label = "Trevor Daniel", color = "white") +
+  annotate("text", x = 79.98, y = 4, label = "78.98", color = "black") +
+  annotate("text", x = 61.5, y = 3, label = "Michael Palardy", color = "white") +
+  annotate("text", x = 79.86, y = 3, label = "78.86", color = "black") +
+  annotate("text", x = 60.8, y = 2, label = "Logan Cooke", color = "white") +
+  annotate("text", x = 79.78, y = 2, label = "78.78", color = "black") +
+  annotate("text", x = 60.6, y = 1, label = "Matt Haack", color = "white") +
+  annotate("text", x = 79.73, y = 1, label = "78.73", color = "black") +
+  coord_cartesian(xlim = c(60, 85)) +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
+    plot.title.position = "plot",
+    # it's obvious what the x-axis is so we remove the title
+    axis.title.y = ggplot2::element_blank()) +
+  nflplotR::theme_y_nfl()
+```
+
+
+### Top Ten Tug Scores
+```{r, echo=FALSE}
+TopTenTUGp
+```
+
+
+|                                      Top Ten Punters with their Corresponding TUGp Scores
+
+<p>&nbsp;</p>
+
+```{r, echo=FALSE}
+TopTenReturners <- read.csv(here("Datasets", "TopTenReturners.csv"))
+```
+
+```{r, echo=FALSE}
+  
+TopTenTUGr <- ggplot2::ggplot(TopTenReturners, aes(y = factor(reorder(id, TUGr)), x = TUGr)) +
+  ggplot2::geom_col(aes(color = team, fill = team), width = 0.6) +
+  nflplotR::scale_color_nfl(type = "secondary") +
+  nflplotR::scale_fill_nfl(alpha = 1) +
+  nflplotR::scale_y_nfl_headshots() +
+  ggplot2::labs(
+    title = "Top 10 Returner TUGr Scores",
+    y = "Average TUGr Scores") +
+  ggplot2::theme_minimal() +
+  annotate("text", x = 21, y = 10, label = "Deonte Harris", color = "white") +
+  annotate("text", x = 36.4, y = 10, label = "35.62", color = "black") +
+  annotate("text", x = 21.3, y = 9, label = "Marquez Callaway", color = "white") +
+  annotate("text", x = 35.56, y = 9, label = "34.81", color = "black") +
+  annotate("text", x = 20.5, y = 8, label = "D.J. Reed", color = "white") +
+  annotate("text", x = 35.08, y = 8, label = "34.28", color = "black") +
+  annotate("text", x = 20.9, y = 7, label = "Jakeem Grant", color = "white") +
+  annotate("text", x = 33.03, y = 7, label = "32.23", color = "black") +
+  annotate("text", x = 21, y = 6, label = "Adoree' Jackson", color = "white") +
+  annotate("text", x = 33.01, y = 6, label = "32.21", color = "black") +
+  annotate("text", x = 21.3, y = 5, label = "Gunner Olszewski", color = "white") +
+  annotate("text", x = 32.77, y = 5, label = "31.97", color = "black") +
+  annotate("text", x = 21, y = 4, label = "Hunter Renfrow", color = "white") +
+  annotate("text", x = 32.34, y = 4, label = "31.54", color = "black") +
+  annotate("text", x = 20.8, y = 3, label = "Nyheim Hines", color = "white") +
+  annotate("text", x = 32.27, y = 3, label = "31.47", color = "black") +
+  annotate("text", x = 20.7, y = 2, label = "Golden Tate", color = "white") +
+  annotate("text", x = 31.67, y = 2, label = "30.87", color = "black") +
+  annotate("text", x = 20.9, y = 1, label = "Marcus Sherels", color = "white") +
+  annotate("text", x = 31.65, y = 1, label = "30.85", color = "black") +
+  coord_cartesian(xlim = c(20, 40)) +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"),
+    plot.title.position = "plot",
+    # it's obvious what the x-axis is so we remove the title
+    axis.title.y = ggplot2::element_blank()
+  ) +
+  # this line triggers the download of the headshot images and calls a ggplot 
+  # theme internally so it must be placed after a theme definition
+  nflplotR::theme_y_nfl()
+
+
+```
+
+```{r, echo=FALSE, warning=FALSE}
+TopTenTUGr
+```
+
+
+|                                      Top Ten Returners with their Corresponding TUGr Scores.
+
+<p>&nbsp;</p>
+
+
+### Closing Analysis: 
+
+<font size = "4"> Our goal was to create a metric that was simple, practical, and unique. We hope that the creation of TUG allows for better evaluation on identifying and distinguishing special teams' skill from one another. Thank you for reading.
+
+<p>&nbsp;</p>
+
+#### Twitter: 
+
+#### Jackson Thomas | @baseballbyJT
+
+#### Brian Bak | @bbakdata
+
+<p>&nbsp;</p>

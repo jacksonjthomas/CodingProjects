@@ -1,0 +1,1746 @@
+---
+title: "Pitcher Evaluation Dashboard"
+author: "Jackson Thomas"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    soure_code: embed
+---
+
+```{r setup, include=FALSE}
+# loaded libraries
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+library(flexdashboard)
+library(DT)
+library(data.table)
+library(reshape)
+library(reshape2)
+```
+
+```{r setup-2, include=FALSE}
+#Data Cleanup
+pitch_data <- read.csv("Data.csv")
+pitch_data <- pitch_data %>% 
+  subset(select = -c(X, X.1, X.2, X.3)) %>%
+  drop_na()
+glimpse(pitch_data)
+colnames(pitch_data)
+```
+
+
+```{r}
+breakdown <- c("Strikes", "Balls", "Total")
+
+pitcher1 <- pitch_data %>% 
+  subset(PitcherId == 1)
+
+pitcher2 <- pitch_data %>% 
+  subset(PitcherId == 2)
+
+pitcher3 <- pitch_data %>% 
+  subset(PitcherId == 3)
+
+pitcher4 <- pitch_data %>% 
+  subset(PitcherId == 4)
+
+pitcher5 <- pitch_data %>% 
+  subset(PitcherId == 5)
+
+pitcher6 <- pitch_data %>% 
+  subset(PitcherId == 6)
+
+pitcher7 <- pitch_data %>% 
+  subset(PitcherId == 7)
+
+pitcher8 <- pitch_data %>% 
+  subset(PitcherId == 8)
+
+pitcher9 <- pitch_data %>% 
+  subset(PitcherId == 9)
+
+pitcher10 <- pitch_data %>% 
+  subset(PitcherId == 10)
+
+pitcher11 <- pitch_data %>% 
+  subset(PitcherId == 11)
+
+pitcher12 <- pitch_data %>% 
+  subset(PitcherId == 12)
+
+pitcher13 <- pitch_data %>% 
+  subset(PitcherId == 13)
+
+pitcher14 <- pitch_data %>% 
+  subset(PitcherId == 14)
+
+pitcher15 <- pitch_data %>% 
+  subset(PitcherId == 15)
+
+pitcher16 <- pitch_data %>% 
+  subset(PitcherId == 16)
+
+pitcher17 <- pitch_data %>% 
+  subset(PitcherId == 17)
+```
+
+Pitcher ID: 1 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 1
+
+```{r}
+#tunneling graph
+p1_tunneling <- ggplot(data = pitcher1, 
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) + 
+  geom_point(size = 2, alpha = 0.50) + 
+  xlim(0, -4) + 
+  ylim(51, 55) + 
+  theme_minimal() + 
+  labs(x = "Release Side (in)", y = "Release Height (in)") + 
+  ggtitle("Pitcher ID 1 - Pitch Tunneling") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 20), 
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18), 
+        legend.title = element_text(size = 16), 
+        legend.text = element_text(size = 14))
+ggplotly(p1_tunneling)
+```
+
+### Movement Plot for Pitcher ID 1
+
+```{r}
+movement_p1 <- ggplot(data = pitcher1, 
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) + 
+  geom_point(size = 2, alpha = 0.50) + 
+  xlim(-2, 2) +
+  ylim(-2, 2) + 
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") + 
+  geom_hline(yintercept = 0) + 
+  geom_vline(xintercept = 0) + 
+  theme_minimal() + 
+  ggtitle("Pitcher ID 1 - Pitch Movement") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18), 
+        strip.text = element_text(size = 16), 
+        legend.title = element_text(size = 16), 
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p1)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 1
+
+```{r}
+pitchTypes_p1 <- c("FF", "FC", "SL", "CU", "CH")
+FF <- pitcher1 %>% subset(PitchType == "FF")
+FC<- pitcher1 %>% subset(PitchType == "FC")
+SL <- pitcher1 %>% subset(PitchType == "SL")
+CU <- pitcher1 %>% subset(PitchType == "CU")
+CH <- pitcher1 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+FCtotal <- nrow(FC)
+SLtotal <- nrow(SL)
+CUtotal <- nrow(CU)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CUballs <- NROW(which((CU$PitchCall == "ball") | (CU$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+FCstrikes <- FCtotal - FCballs
+SLstrikes <- SLtotal - SLballs
+CUstrikes <- CUtotal - CUballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, FCballs, SLballs, CUballs, CHballs)
+strikes <- c(FFstrikes, FCstrikes, SLstrikes, CUstrikes, CHstrikes)
+pitches <- c(FFtotal, FCtotal, SLtotal, CUtotal, CHtotal)
+
+breakdown_p1 <- data.table("Strikes" = strikes, 
+                           "Balls" = balls, 
+                           "Total" = pitches)
+DT::datatable(breakdown_p1, rownames = pitchTypes_p1)
+```
+### Summary for Pitcher ID 1
+
+Demonstrated good tunneling with all pitches. 
+Above average tunneling on CH and FF/FC. 
+FF had good rise, gyro SL, +shape on CU, sinking CH. 
+Able to throw FF and FC for strikes. 
+Demonstrated ability to throw all offspeed for strikes. 
+
+Pitcher ID: 2 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 2
+
+```{r}
+#tunneling graph
+p2_tunneling <- ggplot(data = pitcher2,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 2 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p2_tunneling)
+```
+
+### Movement Plot for Pitcher ID 2
+
+```{r}
+movement_p2 <- ggplot(data = pitcher2,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 2 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p2)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 2
+
+```{r}
+pitchTypes_p2 <- c("FF", "SI", "SL", "CH")
+FF <- pitcher2 %>% subset(PitchType == "FF")
+SI<- pitcher2 %>% subset(PitchType == "SI")
+SL <- pitcher2 %>% subset(PitchType == "SL")
+CH <- pitcher2 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, SIballs, SLballs, CHballs)
+strikes <- c(FFstrikes, SIstrikes, SLstrikes, CHstrikes)
+pitches <- c(FFtotal, SItotal, SLtotal, CHtotal)
+
+breakdown2 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown2, rownames = pitchTypes_p2)
+```
+
+### Summary for Pitcher ID 2
+
+Different realease for CH and FF. 
+Gets out slighlty wider on SL release. 
+Threw a frisbee SL with arm-side-run on FF, SL, and CH. 
+Likes to attack the hitter laterally. 
+Threw all pitches for strikes. 
+
+Pitcher ID: 3 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 3
+
+```{r}
+#tunneling graph
+p3_tunneling <- ggplot(data = pitcher3,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 3 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p3_tunneling)
+```
+
+### Movement Plot for Pitcher ID 3
+
+```{r}
+movement_p3 <- ggplot(data = pitcher3,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 3 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p3)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 3
+
+```{r}
+pitchTypes_p3 <- c("FC", "SI", "SL")
+FC <- pitcher3 %>% subset(PitchType == "FC")
+SI<- pitcher3 %>% subset(PitchType == "SI")
+SL <- pitcher3 %>% subset(PitchType == "SL")
+
+FCtotal <- nrow(FC)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+
+
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FCstrikes <- FCtotal - FCballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FCballs, SIballs, SLballs)
+strikes <- c(FCstrikes, SIstrikes, SLstrikes)
+pitches <- c(FCtotal, SItotal, SLtotal)
+
+breakdown3 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown3, rownames = pitchTypes_p3)
+```
+
+### Summary for Pitcher ID 3
+
+Good tunneling with FC and offspeed. 
+FC has good horizontal movement and rise. 
+Average FC command. 
+Inconsistent SL command. 
+
+Pitcher ID: 4 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 4
+
+```{r}
+#tunneling graph
+p4_tunneling <- ggplot(data = pitcher4,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 4 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p4_tunneling)
+```
+
+### Movement Plot for Pitcher ID 4
+
+```{r}
+movement_p4 <- ggplot(data = pitcher4,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 4 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p4)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 4
+
+```{r}
+pitchTypes_p4 <- c("FF", "FC", "CH")
+FF <- pitcher4 %>% subset(PitchType == "FF")
+FC <- pitcher4 %>% subset(PitchType == "FC")
+CH <- pitcher4 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+FCtotal <- nrow(FC)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+FCstrikes <- FCtotal - FCballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, FCballs, CHballs)
+strikes <- c(FFstrikes, FCstrikes, CHstrikes)
+pitches <- c(FFtotal, FCtotal, CHtotal)
+
+breakdown4 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown4, rownames = pitchTypes_p4)
+```
+
+### Summary for Pitcher ID 4
+
+Above-average tunneling with all pitches. 
+Arm-side-run with FF and fade with CH. 
+Commanded FB for strikes. 
+Able to throw CH and FC for strikes. 
+
+
+Pitcher ID: 5 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 5
+
+```{r}
+#tunneling graph
+p5_tunneling <- ggplot(data = pitcher5,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 5 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p5_tunneling)
+```
+
+### Movement Plot for Pitcher ID 5
+
+```{r}
+movement_p5 <- ggplot(data = pitcher5,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 5 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p5)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 5
+
+```{r}
+pitchTypes_p5 <- c("FF", "SI", "SL", "CU")
+FF <- pitcher5 %>% subset(PitchType == "FF")
+SI<- pitcher5 %>% subset(PitchType == "SI")
+SL <- pitcher5 %>% subset(PitchType == "SL")
+CU <- pitcher5 %>% subset(PitchType == "CU")
+
+FFtotal <- nrow(FF)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+CUtotal <- nrow(CU)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CUballs <- NROW(which((CU$PitchCall == "ball") | (CU$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+CUstrikes <- CUtotal - CUballs
+
+balls <- c(FFballs, SIballs, SLballs, CUballs)
+strikes <- c(FFstrikes, SIstrikes, SLstrikes, CUstrikes)
+pitches <- c(FFtotal, SItotal, SLtotal, CUtotal)
+
+breakdown5 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown5, rownames = pitchTypes_p5)
+```
+
+### Summary for Pitcher ID 5
+
+Above-average tunneling with all pitches. 
+Sweeping CU and SL. 
+Throws SL and CU more than FF. 
+Able to command breaking balls for strikes. 
+
+
+Pitcher ID: 6 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 6
+
+```{r}
+#tunneling graph
+p6_tunneling <- ggplot(data = pitcher6,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 6 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p6_tunneling)
+```
+
+### Movement Plot for Pitcher ID 6
+
+```{r}
+movement_p6 <- ggplot(data = pitcher6,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 6 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p6)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 6
+
+```{r}
+pitchTypes_p6 <- c("FF", "SI", "KC", "CH")
+FF <- pitcher6 %>% subset(PitchType == "FF")
+SI<- pitcher6 %>% subset(PitchType == "SI")
+KC <- pitcher6 %>% subset(PitchType == "KC")
+CH <- pitcher6 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+SItotal <- nrow(SI)
+KCtotal <- nrow(KC)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+KCballs <- NROW(which((KC$PitchCall == "ball") | (KC$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SIstrikes <- SItotal - SIballs
+KCstrikes <- KCtotal - KCballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, SIballs, KCballs, CHballs)
+strikes <- c(FFstrikes, SIstrikes, KCstrikes, CHstrikes)
+pitches <- c(FFtotal, SItotal, KCtotal, CHtotal)
+
+breakdown6 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown6, rownames = pitchTypes_p6)
+```
+
+### Summary for Pitcher ID 6
+
+Above-average tunneling for all pitches. 
+Good shape on knuckle curve. 
+Differentiates FF and KC movement well. 
+Well above-average command of KC. 
+
+Pitcher ID: 7 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 7
+
+```{r}
+#tunneling graph
+p7_tunneling <- ggplot(data = pitcher7,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 7 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p7_tunneling)
+```
+
+### Movement Plot for Pitcher ID 7
+
+```{r}
+movement_p7 <- ggplot(data = pitcher7,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 7 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p7)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 7
+
+```{r}
+pitchTypes_p7 <- c("FF", 'FC', 'SI', 'SL', 'CU')
+FF <- pitcher7 %>% subset(PitchType == "FF")
+FC <- pitcher7 %>% subset(PitchType == "FC")
+SI <- pitcher7 %>% subset(PitchType == "SI")
+SL <- pitcher7 %>% subset(PitchType == "SL")
+CU <- pitcher7 %>% subset(PitchType == "CU")
+
+FFtotal <- nrow(FF)
+FCtotal <- nrow(FC)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+CUtotal <- nrow(CU)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CUballs <- NROW(which((CU$PitchCall == "ball") | (CU$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+FCstrikes <- FCtotal - FCballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+CUstrikes <- CUtotal - CUballs
+
+balls <- c(FFballs, FCballs, SIballs, SLballs, CUballs)
+strikes <- c(FFstrikes, FCstrikes, SIstrikes, SLstrikes, CUstrikes)
+pitches <- c(FFtotal, FCtotal, SItotal, SLtotal, CUtotal)
+
+breakdown7 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown7, rownames = pitchTypes_p7)
+```
+
+### Summary for Pitcher ID 7
+
+Well above-average tunneling for all pitches. 
+All pitches have differentiating movement profiles. 
+Able to throw all 5 pitches for strikes. 
+
+Pitcher ID: 8 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 8
+
+```{r}
+#tunneling graph
+p8_tunneling <- ggplot(data = pitcher8,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(52, 56) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 8 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p8_tunneling)
+```
+
+### Movement Plot for Pitcher ID 8
+
+```{r}
+movement_p8 <- ggplot(data = pitcher8,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 8 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p8)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 8
+
+```{r}
+pitchTypes_p8 <- c("FF", 'FC', 'SI', 'SL')
+FF <- pitcher8 %>% subset(PitchType == "FF")
+FC <- pitcher8 %>% subset(PitchType == "FC")
+SI <- pitcher8 %>% subset(PitchType == "SI")
+SL <- pitcher8 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+FCtotal <- nrow(FC)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+
+FFstrikes <- FFtotal - FFballs
+FCstrikes <- FCtotal - FCballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, FCballs, SIballs, SLballs)
+strikes <- c(FFstrikes, FCstrikes, SIstrikes, SLstrikes)
+pitches <- c(FFtotal, FCtotal, SItotal, SLtotal)
+
+breakdown8 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown8, rownames = pitchTypes_p8)
+```
+
+### Summary for Pitcher ID 8
+
+Good tunneling with all pitches. 
+Legit arm-side run on SI. 
+Poor command of all pitches in outing. 
+
+Pitcher ID: 9 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 9
+
+```{r}
+#tunneling graph
+p9_tunneling <- ggplot(data = pitcher9,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 9 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(p9_tunneling)
+```
+
+### Movement Plot for Pitcher ID 9
+
+```{r}
+movement_p9 <- ggplot(data = pitcher9,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 9 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p9)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 9
+
+```{r}
+pitchTypes_p9 <- c("FF", 'SL')
+FF <- pitcher9 %>% subset(PitchType == "FF")
+SL <- pitcher9 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, SLballs)
+strikes <- c(FFstrikes, SLstrikes)
+pitches <- c(FFtotal, SLtotal)
+
+breakdown9 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown9, rownames = pitchTypes_p9)
+```
+
+### Summary for Pitcher ID 9
+
+Very good tunneling with SL and FF. 
+Likely a reliever. 
+High rising FB with good arm-side run. 
+Frisbee SL. 
+Insane strike-throwing ability of SL. 
+
+Pitcher ID: 10 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 10
+
+```{r}
+#tunneling graph
+p10_tunneling <- ggplot(data = pitcher10,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 10 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p10_tunneling)
+```
+
+### Movement Plot for Pitcher ID 10
+
+```{r}
+movement_p10 <- ggplot(data = pitcher10,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 10 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p10)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 10
+
+```{r}
+pitchTypes_p10 <- c("FF", 'SL')
+FF <- pitcher10 %>% subset(PitchType == "FF")
+SL <- pitcher10 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, SLballs)
+strikes <- c(FFstrikes, SLstrikes)
+pitches <- c(FFtotal, SLtotal)
+
+breakdown10 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown10, rownames = pitchTypes_p10)
+```
+
+### Summary for Pitcher ID 10
+
+Good tunneling of FF and SL. 
+Gyro SL. 
+Rising FF. 
+Able to throw both pitches for strikes. 
+
+Pitcher ID: 11 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 11
+
+```{r}
+#tunneling graph
+p11_tunneling <- ggplot(data = pitcher11,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 11 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p11_tunneling)
+```
+
+### Movement Plot for Pitcher ID 11
+
+```{r}
+movement_p11 <- ggplot(data = pitcher11,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 11 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p11)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 11
+
+```{r}
+pitchTypes_p11 <- c("FF", 'SI', 'SL', 'CU', 'CH')
+FF <- pitcher11 %>% subset(PitchType == "FF")
+SI <- pitcher11 %>% subset(PitchType == "SI")
+SL <- pitcher11 %>% subset(PitchType == "SL")
+CU <- pitcher11 %>% subset(PitchType == "CU")
+CH<- pitcher11 %>% subset(PitchType == "CH")
+
+
+FFtotal <- nrow(FF)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+CUtotal <- nrow(CU)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CUballs <- NROW(which((CU$PitchCall == "ball") | (CU$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+CUstrikes <- CUtotal - CUballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, SIballs, SLballs, CUballs, CHballs)
+strikes <- c(FFstrikes, SIstrikes, SLstrikes, CUstrikes, CHstrikes)
+pitches <- c(FFtotal, SItotal, SLtotal, CUtotal, CHtotal)
+
+breakdown11 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown11, rownames = pitchTypes_p11)
+```
+
+### Summary for Pitcher ID 11
+
+Very good vertical tunneling of all 5 pitches. 
+FF, CH, and SI have too similar of movement profiles. 
+Good shape difference between SL and CU. 
+Above-average ability to throw FB for a strike. 
+Commanded CU for a strike. 
+
+
+Pitcher ID: 12 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 12
+
+```{r}
+#tunneling graph
+p12_tunneling <- ggplot(data = pitcher12,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 12 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p12_tunneling)
+```
+
+### Movement Plot for Pitcher ID 12
+
+```{r}
+movement_p12 <- ggplot(data = pitcher12,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 12 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p12)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 12
+
+```{r}
+pitchTypes_p12 <- c("FF", "SL", "CH")
+FF <- pitcher12 %>% subset(PitchType == "FF")
+SL <- pitcher12 %>% subset(PitchType == "SL")
+CH <- pitcher12 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, SLballs, CHballs)
+strikes <- c(FFstrikes, SLstrikes, CHstrikes)
+pitches <- c(FFtotal, SLtotal, CHtotal)
+
+breakdown12 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown12, rownames = pitchTypes_p12)
+```
+
+### Summary for Pitcher ID 12
+
+Good tunneling of all pitches. 
+Good movement separation on pitches. 
+Plus arm-side-run on CH. 
+Strike throwing ability for FF and offspeed pitches. 
+
+Pitcher ID: 13 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 13
+
+```{r}
+#tunneling graph
+p13_tunneling <- ggplot(data = pitcher13,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 13 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p13_tunneling)
+```
+
+### Movement Plot for Pitcher ID 13
+
+```{r}
+movement_p13 <- ggplot(data = pitcher13,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 13 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p13)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 13
+
+```{r}
+pitchTypes_p13 <- c("FF", 'SL')
+FF <- pitcher13 %>% subset(PitchType == "FF")
+SL <- pitcher13 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, SLballs)
+strikes <- c(FFstrikes, SLstrikes)
+pitches <- c(FFtotal, SLtotal)
+
+breakdown13 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown13, rownames = pitchTypes_p13)
+```
+
+### Summary for Pitcher ID 13
+
+Tight-knit tunneling for FF and SL. 
+Straight rising FF and frisbee SL. 
+Bleow-average strike throwing ability. 
+
+Pitcher ID: 14 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 14
+
+```{r}
+#tunneling graph
+p14_tunneling <- ggplot(data = pitcher14,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 14 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p14_tunneling)
+```
+
+### Movement Plot for Pitcher ID 14
+
+```{r}
+movement_p14 <- ggplot(data = pitcher14,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 14 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p14)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 14
+
+```{r}
+pitchTypes_p14 <- c("FF", 'SL')
+FF <- pitcher14 %>% subset(PitchType == "FF")
+SL <- pitcher14 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, SLballs)
+strikes <- c(FFstrikes, SLstrikes)
+pitches <- c(FFtotal, SLtotal)
+
+breakdown14 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown14, rownames = pitchTypes_p14)
+```
+
+### Summary for Pitcher ID 14
+
+Awesome tunneling for FF and SL. 
+Rising FF. 
+Demonstrated command for both pitches. 
+
+Pitcher ID: 15 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 15
+
+```{r}
+#tunneling graph
+p15_tunneling <- ggplot(data = pitcher15,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, -4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 15 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p15_tunneling)
+```
+
+### Movement Plot for Pitcher ID 15
+
+```{r}
+movement_p15 <- ggplot(data = pitcher15,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 15 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p15)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 15
+
+```{r}
+pitchTypes_p15 <- c("FF", "SL", "CH")
+FF <- pitcher15 %>% subset(PitchType == "FF")
+SL <- pitcher15 %>% subset(PitchType == "SL")
+CH <- pitcher15 %>% subset(PitchType == "CH")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+CHtotal <- nrow(CH)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+CHballs <- NROW(which((CH$PitchCall == "ball") | (CH$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+CHstrikes <- CHtotal - CHballs
+
+balls <- c(FFballs, SLballs, CHballs)
+strikes <- c(FFstrikes, SLstrikes, CHstrikes)
+pitches <- c(FFtotal, SLtotal, CHtotal)
+
+breakdown15 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown15, rownames = pitchTypes_p15)
+```
+
+### Summary for Pitcher ID 15
+
+Insanely good tunneling on all pitches. 
+Good life on FF, with HB and IVB. 
+Above-average ability to throw CH for a strike. 
+
+Pitcher ID: 16 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 16
+
+```{r}
+#tunneling graph
+p16_tunneling <- ggplot(data = pitcher16,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 16 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p16_tunneling)
+```
+
+### Movement Plot for Pitcher ID 16
+
+```{r}
+movement_p16 <- ggplot(data = pitcher16,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 2 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p16)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 16
+
+```{r}
+pitchTypes_p16 <- c("FC", "SI", "SL")
+FC <- pitcher16 %>% subset(PitchType == "FC")
+SI <- pitcher16 %>% subset(PitchType == "SI")
+SL <- pitcher16 %>% subset(PitchType == "SL")
+
+
+FCtotal <- nrow(FC)
+SItotal <- nrow(SI)
+SLtotal <- nrow(SL)
+
+
+FCballs <- NROW(which((FC$PitchCall == "ball") | (FC$PitchCall == "blocked_ball")))
+SIballs <- NROW(which((SI$PitchCall == "ball") | (SI$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FCstrikes <- FCtotal - FCballs
+SIstrikes <- SItotal - SIballs
+SLstrikes <- SLtotal - SLballs
+
+
+balls <- c(FCballs, SIballs, SLballs)
+strikes <- c(FCstrikes, SIstrikes, SLstrikes)
+pitches <- c(FCtotal, SItotal, SLtotal)
+
+breakdown16 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown16, rownames = pitchTypes_p16)
+```
+
+### Summary for Pitcher ID 16
+
+Good tunneling on all pitches. 
+Hard arm-side-run on SI. 
+Good command of all pitches. 
+
+Pitcher ID: 17 {data-navmenu="Pitchers"}
+=======================================================================
+
+Row
+-----------------------------------------------------------------------
+
+### Tunneling Map for Pitcher ID 17
+
+```{r}
+#tunneling graph
+p17_tunneling <- ggplot(data = pitcher17,
+                       aes(x = ReleasePositionX, y = ReleasePositionY, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(0, 4) +
+  ylim(51, 55) +
+  theme_minimal() +
+  labs(x = "Release Side (in)", y = "Release Height (in)") +
+  ggtitle("Pitcher ID 17 - Pitch Tunneling") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+ggplotly(p17_tunneling)
+```
+
+### Movement Plot for Pitcher ID 17
+
+```{r}
+movement_p17 <- ggplot(data = pitcher17,
+       aes(x = TrajectoryHorizontalBreak, y = TrajectoryVerticalBreakInduced, color = PitchType)) +
+  geom_point(size = 2, alpha = 0.50) +
+  xlim(-2, 2) +
+  ylim(-2, 2) +
+  labs(x = "Horizontal Break", y = "Induced Vertical Break") +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_minimal() +
+  ggtitle("Pitcher ID 17 - Pitch Movement") +
+  theme(plot.title = element_text(hjust = 0.5, size = 20),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.x = element_text(size = 18),
+        axis.title.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
+
+ggplotly(movement_p17)
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Pitch Breakdown for Pitcher ID 17
+
+```{r}
+pitchTypes_p17 <- c("FF", 'SL')
+FF <- pitcher17 %>% subset(PitchType == "FF")
+SL <- pitcher17 %>% subset(PitchType == "SL")
+
+FFtotal <- nrow(FF)
+SLtotal <- nrow(SL)
+
+FFballs <- NROW(which((FF$PitchCall == "ball") | (FF$PitchCall == "blocked_ball")))
+SLballs <- NROW(which((SL$PitchCall == "ball") | (SL$PitchCall == "blocked_ball")))
+
+FFstrikes <- FFtotal - FFballs
+SLstrikes <- SLtotal - SLballs
+
+balls <- c(FFballs, SLballs)
+strikes <- c(FFstrikes, SLstrikes)
+pitches <- c(FFtotal, SLtotal)
+
+breakdown17 <- data.table("Strikes" = strikes,
+                           "Balls" = balls,
+                           "Total" = pitches)
+DT::datatable(breakdown17, rownames = pitchTypes_p17)
+```
+
+### Summary for Pitcher ID 17
+
+++Tunneling on pitches. 
+Consistent movement planes of FF and SL. 
++Command of SL. 

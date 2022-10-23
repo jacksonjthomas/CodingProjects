@@ -1,0 +1,140 @@
+---
+title: "NCAA Pitcher Dashboard 2022"
+author: "Jackson Thomas"
+output:  
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    social: menu
+    soure_code: embed
+---
+
+```{r, include=FALSE}
+library(here)
+library(rsconnect)
+library(tidyverse)
+library(flexdashboard)
+library(dplyr)
+library(plotly)
+library(DT)
+library(data.table)
+library(knitr)
+library(ggplot2)
+library(shiny)
+```
+
+
+```{r, include=FALSE}
+pitchers <- read_csv(here("Research_Data", "TrackmanPitching.csv"))
+
+```
+
+```{r}
+```
+
+
+#pitch summaries
+```{r}
+pitchersTable <- pitchers %>%
+  select(pitcher_name, pitch_type, velocity, vertical_release_angle, horizontal_release_angle,	spin_rate, spin_axis,	release_height,	release_side,	extension, vertical_break,	induced_vertical_break,	horizontal_break,	vertical_approach_angle, horz_approach_angle, exit_velocity, launch_angle) %>% 
+  group_by(pitcher_name, pitch_type) %>%
+  summarise("No" = n(),
+            "Velo" = round(mean(velocity), 2),
+            "VRA" = round(mean(vertical_release_angle), 2), 
+            "HRA" = round(mean(horizontal_release_angle), 2), 
+            "Spin Rate" = round(mean(spin_rate), 2), 
+            "Spin Axis" = round(mean(spin_axis), 2),
+            "Release Height" = round(mean(release_height), 2),
+            "Release Side" = round(mean(release_side), 2),
+            "Extension" = round(mean(extension), 2),
+            "VB" = round(mean(vertical_break), 2),
+            "IVB" = round(mean(induced_vertical_break), 2),
+            "HB" = round(mean(horizontal_break), 2),
+            "VAA" = round(mean(vertical_approach_angle), 2),
+            "HAA" = round(mean(horz_approach_angle), 2),
+            "EV" = round(mean(exit_velocity), 2), 
+            "LA" = round(mean(launch_angle), 2)) 
+
+```
+Master Table {data-navmenu="Tables"}
+=======================================================================
+
+```{r}
+DT::datatable(pitchersTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+Fastball Table {data-navmenu="Tables"}
+=======================================================================
+
+```{r}
+FBTable <- pitchersTable %>%
+  filter(pitch_type == "Fastball")
+
+DT::datatable(FBTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+Sinker Table {data-navmenu="Tables"}
+=======================================================================
+```{r}
+SITable <- pitchersTable %>%
+  filter(pitch_type == "Sinker")
+
+DT::datatable(SITable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+Curveball Table {data-navmenu="Tables"}
+=======================================================================
+```{r}
+CBTable <- pitchersTable %>%
+  filter(pitch_type == "Curveball")
+
+DT::datatable(CBTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+Slider Table {data-navmenu="Tables"}
+=======================================================================
+```{r}
+SLTable <- pitchersTable %>%
+  filter(pitch_type == "Slider")
+
+DT::datatable(SLTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+Changeup Table {data-navmenu="Tables"}
+=======================================================================
+```{r}
+CHTable <- pitchersTable %>%
+  filter(pitch_type == "Changeup")
+
+DT::datatable(CHTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+Cutter Table {data-navmenu="Tables"}
+=======================================================================
+```{r}
+CTTable <- pitchersTable %>%
+  filter(pitch_type == "Cutter")
+
+DT::datatable(CTTable, filter = 'top', options = list(
+  pageLength = 15, autoWidth = TRUE
+)) %>%
+  formatStyle(columns = c(1:30) ,fontSize = "80%" )
+```
+
+
