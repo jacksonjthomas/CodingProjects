@@ -4,7 +4,7 @@
 ### **Jackson Thomas**
 
 ## Goal
-### The goal of this project was to evaluate hitter perfroamnce based on measurements of batted ball metrics. Specifically I need to project the "true" average exit velocity for each batter by using two differnt measurement systems
+### The goal of this project was to evaluate hitter performance based on measurements of batted ball metrics. Specifically I need to project the "true" average exit velocity for each batter by using two differnt measurement systems of batted ball data. 
   * ### Variables
     * ### SpeedOffBat
       * ### Exit Velocity  
