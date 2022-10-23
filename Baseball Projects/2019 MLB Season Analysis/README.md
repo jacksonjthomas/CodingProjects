@@ -10,7 +10,7 @@
     * ### Using a Gaussian Mixture clustering model
   * ### Can we Predict a Player's Division They Play In?
     * ### Based on their Offensive Performance
-    * ## Using decision trees
+    * ### Using decision trees
   * ### What Variables Best Explain the Variance in OPS+ Scores? 
-    * Using PCA Analysis
+    * ### Using PCA Analysis
 
