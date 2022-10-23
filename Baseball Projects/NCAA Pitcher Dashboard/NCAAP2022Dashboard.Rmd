@@ -24,7 +24,7 @@ library(shiny)
 
 
 ```{r, include=FALSE}
-pitchers <- read_csv(here("Research_Data", "TrackmanPitching.csv"))
+pitchers <- read_csv(here("Research_Data", "Pitching.csv"))
 
 ```
 
