@@ -3236,8 +3236,6 @@ id,contact_state,found
 45956433,VA,
 45956415,MD,
 45956106,MD,
-45954518,17325,
-45954513,17325,
 45954509,NJ,
 45954511,NY,
 45954514,PA,New York
@@ -3713,8 +3711,6 @@ id,contact_state,found
 45984749,VA,
 45984741,MD,
 45983957,MD,
-45961529,17325,
-45938659,17325,
 45924230,PA,
 45895280,NJ,North Carolina
 45895282,NJ,Oklahoma
@@ -6028,8 +6024,6 @@ id,contact_state,found
 ,VA,
 ,VA,
 ,VA,
-,17325,
-,17325,
 ,NJ,Florida
 ,NC,
 ,NC,
@@ -6073,8 +6067,6 @@ id,contact_state,found
 ,VA,
 ,MD,
 ,MD,
-,17325,
-,17325,
 ,UT,Washington
 ,VA,
 ,MS,Mississippi
@@ -6132,8 +6124,6 @@ id,contact_state,found
 ,MD,
 ,MD,
 ,MD,
-,17325,
-,17325,
 ,PA,
 ,PA,
 ,PA,
