@@ -9,7 +9,7 @@ from tabulate import tabulate
 mydb = mysql.connector.connect(
     host = "localhost",
     user = "root",
-    password = "BROtein69",
+    password = "#########",
     database = "miniBaseballSavant"
 )
 
