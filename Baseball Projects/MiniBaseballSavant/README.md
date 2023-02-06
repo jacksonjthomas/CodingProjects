@@ -1,18 +1,7 @@
-# Final Project
+# Mini Baseball Savant
+### *12/01/2022*
 
-## Mini Baseball Savant
+### **Jackson Thomas**
 
-* Name: Jackson Thomas 
-* ID: 2339698
-* Email: jathomas@chapman.edu
-
-## References
-* Slides and notes
-* MySQL API
-* Statcast API
-
-## Special Instructions
-* python3 miniBaseballSavant.py
-
-## Notes
-* Fails to work with commit and rollback 
+## Goal
+### The goal of this project was to create a mini Baseball Savant application for the command line that specalizes in direct player and matchup comparison.
